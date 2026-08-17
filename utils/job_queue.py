@@ -410,7 +410,7 @@ async def process_job(client, job):
                 # Update progress info for downloading this specific quality path
                 dl_start[0] = time.time()
                 last_dl_update[0] = 0
-                await update_state("📥 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗩𝗶𝗱𝗲𝗼...", "", q, v_orig_name)
+                await update_state("📥 𝗗𝗼𝘄𝗻𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗩𝗶𝗱𝗲𝗼...", "", q, predicted_filenames.get(i, v_orig_name))
                 
                 v_path = await v_msg.download(
                     file_name=os.path.join(work_dir, f"video_{i}.mkv"),
@@ -421,7 +421,7 @@ async def process_job(client, job):
                 if q != "-":
                     res = q
                 else:
-                    await update_state("🔍 𝗣𝗿𝗼𝗯𝗶𝗻𝗴 𝗥𝗲𝘀𝗼𝗹𝘂𝘁𝗶𝗼𝗻...", "", q, v_orig_name)
+                    await update_state("🔍 𝗣𝗿𝗼𝗯𝗶𝗻𝗴 𝗥𝗲𝘀𝗼𝗹𝘂𝘁𝗶𝗼𝗻...", "", q, predicted_filenames.get(i, v_orig_name))
                     res = await get_video_resolution(v_path)
                     if res == "Unknown":
                         res = q
@@ -450,12 +450,12 @@ async def process_job(client, job):
                 filename = f"{filename_base}{ext}"
                 
                 if process_mode == "rename_only":
-                    await update_state("⚙️ 𝗥𝗲𝗻𝗮𝗺𝗶𝗻𝗴 𝗙𝗶𝗹𝗲...", "", res, filename)
+                    await update_state("⚙️ 𝗘𝗻𝗰𝗼𝗱𝗶𝗻𝗴 𝗩𝗶𝗱𝗲𝗼...", "", res, filename)
                     out_path = os.path.join(work_dir, f"out_{res}.mkv")
                     shutil.copy2(v_path, out_path)
                     success = True
                 else:
-                    await update_state("⚙️ 𝗠𝘂𝘅𝗶𝗻𝗴 𝗔𝘂𝗱𝗶𝗼...", "", res, filename)
+                    await update_state("⚙️ 𝗘𝗻𝗰𝗼𝗱𝗶𝗻𝗴 𝗩𝗶𝗱𝗲𝗼...", "", res, filename)
                     out_path = os.path.join(work_dir, f"out_{res}.mkv")
                     success = await strip_and_mux_audio(v_path, audio_path, out_path)
                 
@@ -534,6 +534,8 @@ async def process_job(client, job):
                         last_update_time = [0]
                         
                         def progress_cb(current, total):
+                            if total < 2 * 1024 * 1024:
+                                return
                             now = time.time()
                             if now - last_update_time[0] < 3 and current < total:
                                 return
