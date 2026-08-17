@@ -82,7 +82,7 @@ async def render_edit_menu(client, user_id, chat_id, m_edit=None):
         text += "_No buttons attached to this message._\n"
     else:
         for i, btn in enumerate(state["buttons"]):
-            text += f"{i+1}. {btn['text']} — `[URL Link]`\n"
+            text += f"{i+1}. {btn['text']} — `{btn['url']}`\n"
             
     markup = []
     markup.append([InlineKeyboardButton("➕ Add New Button", callback_data="edbtn_add")])
