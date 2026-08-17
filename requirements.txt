@@ -1,0 +1,9 @@
+pyrogram
+tgcrypto
+motor
+dnspython
+ffmpeg-python
+aiofiles
+psutil
+pyromod
+certifi
