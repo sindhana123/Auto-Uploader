@@ -61,7 +61,8 @@ async def edit_cmd(client: Client, message: Message):
     EDIT_STATE[message.from_user.id] = {
         "chat_id": chat_id,
         "msg_id": msg_id,
-        "buttons": buttons
+        "buttons": buttons,
+        "layout": []
     }
     
     await render_edit_menu(client, message.from_user.id, message.chat.id)
@@ -87,7 +88,10 @@ async def render_edit_menu(client, user_id, chat_id, m_edit=None):
     markup.append([InlineKeyboardButton("➕ Add New Button", callback_data="edbtn_add")])
     
     if state["buttons"]:
-        markup.append([InlineKeyboardButton("➖ Remove Button", callback_data="edbtn_rem")])
+        markup.append([
+            InlineKeyboardButton("➖ Remove Button", callback_data="edbtn_rem"),
+            InlineKeyboardButton("📟 Change Layout", callback_data="edbtn_layout")
+        ])
         
     markup.append([InlineKeyboardButton("💾 Save & Apply To Channel", callback_data="edbtn_save")])
     markup.append([InlineKeyboardButton("🗑 Cancel", callback_data="edbtn_cancel")])
@@ -144,6 +148,41 @@ async def edit_callback_handler(client: Client, query: CallbackQuery):
             else:
                 await btn_info.reply_text("⚠️ Invalid URL. URL must start with http/https")
                 
+        # Reset layout when a new button is added since count changes
+        state["layout"] = []
+        await render_edit_menu(client, user_id, query.message.chat.id)
+        
+    elif action == "layout":
+        await query.answer()
+        num_btns = len(state["buttons"])
+        if num_btns == 0:
+            return
+            
+        try:
+            lay_info = await client.ask(
+                chat_id=query.message.chat.id,
+                text=f"**Send Button Layout Structure:**\n\nYou have **{num_btns}** buttons.\nSend spaces between numbers to set rows.\nExample: `2 1 1` (means 2 in first row, 1 in next, etc.)\n\n(Send /cancel to abort)",
+                user_id=user_id,
+                timeout=120
+            )
+        except Exception:
+            return
+            
+        if lay_info.text == "/cancel":
+            await render_edit_menu(client, user_id, query.message.chat.id)
+            return
+            
+        try:
+            parts = lay_info.text.strip().split()
+            layout = [int(x) for x in parts]
+            if sum(layout) != num_btns:
+                await lay_info.reply_text(f"⚠️ **Error:** Sum of your layout ({sum(layout)}) does not match your total buttons ({num_btns}).")
+            else:
+                state["layout"] = layout
+                await lay_info.reply_text("✅ **Custom Layout Applied!**")
+        except Exception:
+            await lay_info.reply_text("⚠️ **Invalid format.** Just send numbers separated by spaces.")
+            
         await render_edit_menu(client, user_id, query.message.chat.id)
         
     elif action == "rem":
@@ -170,9 +209,22 @@ async def edit_callback_handler(client: Client, query: CallbackQuery):
         final_markup = None
         if state["buttons"]:
             kb = []
-            for b in state["buttons"]:
-                # One button per row, or we can just pair them dynamically
-                kb.append([InlineKeyboardButton(b["text"], url=b["url"])])
+            layout = state.get("layout", [])
+            btns = state["buttons"].copy()
+            
+            if layout and sum(layout) == len(btns):
+                idx = 0
+                for row_len in layout:
+                    row = []
+                    for _ in range(row_len):
+                        b = btns[idx]
+                        row.append(InlineKeyboardButton(b["text"], url=b["url"]))
+                        idx += 1
+                    kb.append(row)
+            else:
+                # Default 1 per row
+                for b in btns:
+                    kb.append([InlineKeyboardButton(b["text"], url=b["url"])])
             final_markup = InlineKeyboardMarkup(kb)
             
         try:
