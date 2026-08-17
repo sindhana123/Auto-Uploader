@@ -2,7 +2,10 @@ import os
 
 class Config(object):
     # Bot Config
-    API_ID = int(os.environ.get("API_ID", "27891965"))
+    try:
+        API_ID = int(os.environ.get("API_ID", "27891965"))
+    except ValueError:
+        API_ID = 27891965
     API_HASH = os.environ.get("API_HASH", "909e944f30752b2c47804cbccb8c5c4f")
     BOT_TOKEN = os.environ.get("BOT_TOKEN", "8116459430:AAHI-gS0XuJLYB4yUSXKghPr4hTsli1QeqQ")
     
