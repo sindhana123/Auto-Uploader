@@ -45,13 +45,15 @@ async def get_video_resolution(file_path):
     return "Unknown"
 
 async def strip_and_mux_audio(video_path, audio_path, output_path):
-    # -map 0:v (take video from first input)
-    # -map 1:a (take audio from second input)
-    cmd = f'ffmpeg -y -i "{video_path}" -i "{audio_path}" -map 0:v -map 1:a -c copy "{output_path}"'
+    # -map 0:v (video)
+    # -map 1:a (audio)
+    # -map 0:s? (subtitles optional)
+    # -map 0:t? (fonts/attachments optional)
+    cmd = f'ffmpeg -y -i "{video_path}" -i "{audio_path}" -map 0:v -map 1:a -map 0:s? -map 0:t? -c copy "{output_path}"'
     stdout, stderr, rc = await run_cmd(cmd)
     if rc != 0:
         print(f"ffmpeg failed with exit status {rc}. Retrying with stream-specific map...")
-        cmd_fallback = f'ffmpeg -y -i "{video_path}" -i "{audio_path}" -map 0:v:0 -map 1:a:0 -c copy "{output_path}"'
+        cmd_fallback = f'ffmpeg -y -i "{video_path}" -i "{audio_path}" -map 0:v:0 -map 1:a:0 -map 0:s? -map 0:t? -c copy "{output_path}"'
         stdout, stderr, rc = await run_cmd(cmd_fallback)
         if rc != 0:
             print(f"ffmpeg fallback failed. STDOUT: {stdout} | STDERR: {stderr}")
