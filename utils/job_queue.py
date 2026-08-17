@@ -47,15 +47,19 @@ def humanbytes(size):
     return f"{round(size, 2)} {Dic_powerN[n]}"
 
 process_queue = asyncio.Queue()
+USER_CANCELLATIONS = set()
 
 async def worker(client):
     while True:
         job = await process_queue.get()
+        user_id = job.get('user_id')
         try:
             await process_job(client, job)
         except Exception as e:
             print(f"Error processing job: {e}")
         finally:
+            if user_id in USER_CANCELLATIONS:
+                USER_CANCELLATIONS.discard(user_id)
             process_queue.task_done()
 
 def get_progress_text(ep, state, anime, s_and_e, quality, filename):
@@ -266,6 +270,8 @@ async def process_job(client, job):
     last_dl_update = [0]
     
     def dl_progress_cb(current, total, file_label="", quality_label="-"):
+        if job.get('user_id') in USER_CANCELLATIONS:
+            raise RuntimeError("TaskCancelledByUser")
         now = time.time()
         if dl_start[0] == 0:
             dl_start[0] = now
@@ -625,10 +631,21 @@ async def process_job(client, job):
                 
         # Final notification in user's PM
         try:
-            await client.edit_message_text(chat_id, status_msg, f"✅ **Processing Completed!**\nFiles successfully posted in target channel.")
+            if job.get('user_id') in USER_CANCELLATIONS:
+                await client.edit_message_text(chat_id, status_msg, "❌ **Task was cancelled by user.**")
+            else:
+                await client.edit_message_text(chat_id, status_msg, f"✅ **Processing Completed!**\nFiles successfully posted in target channel.")
         except Exception:
             pass
 
+    except RuntimeError as re_err:
+        if str(re_err) == "TaskCancelledByUser":
+            try:
+                await client.edit_message_text(chat_id, status_msg, "❌ **Task Cancelled.** Moving next...")
+            except Exception: pass
+            print(f"Job cancelled for user {job.get('user_id')}")
+        else:
+            raise re_err
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
         log_msg_id = job.get("log_msg_id")

@@ -238,6 +238,14 @@ async def clear_queue_cmd(client: Client, message: Message):
     await db.update_user_state(message.from_user.id, state)
     await message.reply_text("✅ **Your queue has been cleared!** You can now send new files.")
 
+@Client.on_message(filters.command("cancel_task") & filters.private)
+async def cancel_task_cmd(client: Client, message: Message):
+    if not await db.is_user_authorized(message.from_user.id):
+        return
+    from utils.job_queue import USER_CANCELLATIONS
+    USER_CANCELLATIONS.add(message.from_user.id)
+    await message.reply_text("🛑 **Cancellation Requested!**\nStopping current task and moving to the next...")
+
 @Client.on_message(filters.command("start_process") & filters.private)
 async def start_process_cmd(client: Client, message: Message):
     await client.stop_listening(chat_id=message.chat.id, user_id=message.from_user.id)
