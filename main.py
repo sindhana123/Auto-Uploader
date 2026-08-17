@@ -21,8 +21,8 @@ class Bot(Client):
             plugins=dict(root="plugins")
         )
 
-    async def start(self):
-        await super().start()
+    async def start(self, *args, **kwargs):
+        await super().start(*args, **kwargs)
         logger.info("Bot started!")
         # Create temp folder if not exists
         if not os.path.exists("temp"):
