@@ -38,7 +38,9 @@ ABOUT_TEXT = """<b>📝 Language :</b> Python3
    
 <b>😈 Bot Made By :</b> Motherbasha"""
 
-HELP_TEXT = """<b>Available User Commands & Usage:</b>
+HELP_TEXT = """<b>📙 Manual Guide: <a href="https://telegra.ph/Auto-Uploader-Manual-08-17">Click Here To View</a></b>
+
+<b>Available User Commands & Usage:</b>
 
 <blockquote>/start - Start the bot & view main menu.
 /settings - Core settings panel to configure everything.
