@@ -56,7 +56,7 @@ HELP_TEXT = """<b>📙 Manual Guide: <a href="https://telegra.ph/Auto-Uploader-M
 /set_thumb   |  /set_sticker</blockquote>
 
 <b>Channel Routing:</b>
-<blockquote>/add_channel <hint> <link> - (Reply) Link hint to channel.
+<blockquote>/add_channel <hint> <link or Channel id> - (Reply) Link hint to channel.
 /view_channel - View your saved upload channels.
 /remove_channel <id> - Remove a tracked channel.</blockquote>"""
 

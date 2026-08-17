@@ -37,8 +37,7 @@ async def add_channel_cmd(client: Client, message: Message):
         if len(parts) < 2:
             await message.reply_text(
                 "Usage:\n"
-                "1. Reply to forwarded message: `/add_channel [hint]`\n"
-                "2. Or Direct: `/add_channel [channel_identifier] [hint]`\n"
+                "1. Reply to forwarded message: `/add_channel [hint] channel id`\n"
                 "Where `channel_identifier` is channel ID, username or link."
             )
             return

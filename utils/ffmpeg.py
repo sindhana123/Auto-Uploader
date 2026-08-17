@@ -66,7 +66,7 @@ async def extract_thumbnail(video_path, output_path):
     return rc == 0
 
 async def get_media_info(file_path):
-    cmd = f'ffprobe -v quiet -print_format json -show_streams "{file_path}"'
+    cmd = f'ffprobe -v quiet -print_format json -show_format -show_streams "{file_path}"'
     stdout, _, rc = await run_cmd(cmd)
     if rc == 0:
         try:

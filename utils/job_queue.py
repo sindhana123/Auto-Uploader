@@ -1,6 +1,6 @@
 import asyncio
 from config import Config
-from utils.ffmpeg import get_video_resolution, strip_and_mux_audio
+from utils.ffmpeg import get_video_resolution, strip_and_mux_audio, get_media_info
 from database import db
 import os
 import shutil
@@ -468,6 +468,48 @@ async def process_job(client, job):
                     upload_label = "📤 𝗨𝗽𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗧𝗼 𝗗𝘂𝗺𝗽..." if button_mode else "📤 𝗨𝗽𝗹𝗼𝗮𝗱𝗶𝗻𝗴 𝗧𝗼 𝗖𝗵𝗮𝗻𝗻𝗲𝗹..."
                     await update_state(upload_label, "", res, filename)
                     
+                    # Calculate new metadata formats
+                    languages_eng = "Unknown"
+                    languages_reg = "Unknown"
+                    duration_str = "00:00"
+                    duration_sec = 0
+                    file_size_str = "0 B"
+                    
+                    try:
+                        file_size_str = humanbytes(os.path.getsize(final_path))
+                        m_info = await get_media_info(final_path)
+                        
+                        f_info = m_info.get("format", {})
+                        if "duration" in f_info:
+                            duration_sec = int(float(f_info["duration"]))
+                            hours = duration_sec // 3600
+                            minutes = (duration_sec % 3600) // 60
+                            seconds = duration_sec % 60
+                            if hours > 0:
+                                duration_str = f"{hours}:{minutes:02d}:{seconds:02d}"
+                            else:
+                                duration_str = f"{minutes}:{seconds:02d}"
+                                
+                        streams = m_info.get("streams", [])
+                        found_langs = []
+                        for s in streams:
+                            if s.get("codec_type") == "audio":
+                                lang = s.get("tags", {}).get("language", "und").lower()
+                                if lang != "und":
+                                    found_langs.append(lang)
+                                    
+                        if found_langs:
+                            seen = set()
+                            unique_langs = [x for x in found_langs if not (x in seen or seen.add(x))]
+                            
+                            lang_map_eng = {"tam": "Tamil", "hin": "Hindi", "tel": "Telugu", "eng": "English", "jpn": "Japanese", "mal": "Malayalam", "kan": "Kannada", "kor": "Korean"}
+                            lang_map_reg = {"tam": "தமிழ்", "hin": "हिन्दी", "tel": "తెలుగు", "eng": "English", "jpn": "日本語", "mal": "മലയാളం", "kan": "ಕನ್ನಡ", "kor": "한국어"}
+                            
+                            languages_eng = ", ".join([lang_map_eng.get(l, l.title()) for l in unique_langs])
+                            languages_reg = ", ".join([lang_map_reg.get(l, lang_map_eng.get(l, l.title())) for l in unique_langs])
+                    except Exception as e:
+                        print(f"Error parsing advanced media info: {e}")
+                    
                     cap_fmt = settings.get("caption_format", "<b>{filename}</b>")
                     if not cap_fmt or cap_fmt == "{filename}":
                         cap_fmt = "<b>{filename}</b>"
@@ -478,7 +520,11 @@ async def process_job(client, job):
                         season=job.get('season', '01'),
                         episode=job.get('episode', '01'),
                         language=job.get('language', 'Unknown'),
-                        quality=res
+                        quality=res,
+                        size=file_size_str,
+                        duration=duration_str,
+                        languages=languages_eng,
+                        languagesr=languages_reg
                     )
                     
                     # Upload with progress bar
@@ -522,6 +568,7 @@ async def process_job(client, job):
                                 caption=caption,
                                 parse_mode=enums.ParseMode.HTML,
                                 thumb=thumb_path,
+                                duration=duration_sec,
                                 progress=progress_cb
                             )
                         else:
@@ -538,7 +585,7 @@ async def process_job(client, job):
                         upload_chat_id = int(dump_channel_id) if button_mode else target_chat
                         actual_type = upload_type
                         if actual_type == "video":
-                            uploaded_msg = await client.send_video(upload_chat_id, video=final_path, caption=caption, parse_mode=enums.ParseMode.HTML, thumb=thumb_path)
+                            uploaded_msg = await client.send_video(upload_chat_id, video=final_path, caption=caption, parse_mode=enums.ParseMode.HTML, thumb=thumb_path, duration=duration_sec)
                         else:
                             uploaded_msg = await client.send_document(upload_chat_id, document=final_path, caption=caption, parse_mode=enums.ParseMode.HTML, thumb=thumb_path)
                     
