@@ -277,7 +277,7 @@ async def process_job(client, job):
         now = time.time()
         if dl_start[0] == 0:
             dl_start[0] = now
-        if now - last_dl_update[0] < 3 and current < total:
+        if now - last_dl_update[0] < 8 and current < total:
             return
         last_dl_update[0] = now
         
@@ -540,7 +540,7 @@ async def process_job(client, job):
                             if total < 2 * 1024 * 1024:
                                 return
                             now = time.time()
-                            if now - last_update_time[0] < 3 and current < total:
+                            if now - last_update_time[0] < 8 and current < total:
                                 return
                             last_update_time[0] = now
                             
