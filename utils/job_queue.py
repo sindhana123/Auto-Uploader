@@ -312,8 +312,8 @@ async def process_job(client, job):
             q = "-"
         resolved_videos.append((vm, q, v_msg))
         
-    # Sort from low to high quality
-    resolved_videos.sort(key=lambda x: sort_key(x[1]))
+    # Preserve the exact sequence the user sent the videos in
+    # (Removed quality sorting as requested by user)
     
     # Update job['video_msgs'] and cache messages list
     job['video_msgs'] = [rv[0] for rv in resolved_videos]

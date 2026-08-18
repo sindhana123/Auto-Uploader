@@ -150,32 +150,32 @@ async def set_details_cmd(client: Client, message: Message):
     if len(args) < 2:
         guide = (
             "📝 **Set Details Command Guide**\n\n"
-            "This command helps you forcibly define the episode, season, and language in case they are missing from the filename.\n\n"
+            "This command helps you forcibly define the episode and season in case they are missing from the filename.\n\n"
             "**Format:**\n"
-            "`/set_details <episode>, <season>, <language>, <target_channel_id (optional)>`\n\n"
+            "`/set_details <episode>, <season>, <target_channel_id (optional)>`\n\n"
             "**Example:**\n"
-            "`/set_details 3, 1, Tamil` (Set as Episode 3, Season 1, Tamil)\n"
+            "`/set_details 3, 1` (Set as Episode 3, Season 1)\n"
             "*Note: Comma `,` is required to separate the values!*"
         )
         await message.reply_text(guide)
         return
         
     parts = [p.strip() for p in args[1].split(",")]
-    if len(parts) < 3:
-        await message.reply_text("❌ Please provide at least episode, season, and language separated by commas. Example: `/set_details 3, 1, Tamil`")
+    if len(parts) < 2:
+        await message.reply_text("❌ Please provide at least episode, and season separated by commas. Example: `/set_details 3, 1`")
         return
         
     state = await db.get_user_state(message.from_user.id)
     job = state.get("current_job", {})
     job["episode"] = parts[0]
     job["season"] = parts[1]
-    job["language"] = parts[2]
-    if len(parts) > 3:
-        job["target_channel_id"] = parts[3]
+    
+    if len(parts) > 2:
+        job["target_channel_id"] = parts[2]
         
     state["current_job"] = job
     await db.update_user_state(message.from_user.id, state)
-    await message.reply_text(f"Details saved: E{job['episode']} S{job['season']} [{job['language']}]")
+    await message.reply_text(f"Details saved: E{job['episode']} S{job['season']}")
 
 @Client.on_message((filters.video | filters.document | filters.audio) & filters.private)
 async def handle_files(client: Client, message: Message):
