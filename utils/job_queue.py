@@ -131,6 +131,8 @@ async def apply_metadata(input_path, output_path, user_id):
     cmd_args.extend(["-metadata:s:v", f"title={metadata_txt}"])
     cmd_args.extend(["-metadata:s:a", f"title={metadata_txt}"])
     cmd_args.extend(["-metadata:s:s", f"title={metadata_txt}"])
+    
+    cmd_args.extend(["-map", "0"])
         
     cmd_args.extend(["-c", "copy", output_path])
     
@@ -300,9 +302,10 @@ async def process_job(client, job):
 
     await update_state("⏳ Starting resource downloads...")
     
-    # 2. Fetch video messages, resolve qualities, sort by quality (low to high), cache them, and predict final filenames
+    # 2. Fetch video messages sequentially by message ID (preserving chronological forwarding order)
     resolved_videos = []
-    for vm in job['video_msgs']:
+    in_order_msgs = sorted(job['video_msgs'], key=lambda x: x['msg_id'])
+    for vm in in_order_msgs:
         try:
             v_msg = await client.get_messages(vm['chat_id'], vm['msg_id'])
             v_orig_name = getattr(v_msg.video or v_msg.document, "file_name", "")
